@@ -62,17 +62,18 @@ private:
 
 
 class AUTHRulesProvider {
-  public:
-    AUTHRulesProvider(const DBConfig& config) {
-        db_load(boost::bind(&AUTHRulesProvider::load, this));
-    }
-    ~AUTHRulesProvider() {}
+public:
+  AUTHRulesProvider(const DBConfig& config) {
+      db_load(boost::bind(&AUTHRulesProvider::load, this));
+  }
+  ~AUTHRulesProvider() {}
 
-    bool isAllowedToAccessAuth(apr_time_t time) const;
-    void loadAuthsFromDB(SQLite::Database& db);
+  bool isAllowedToAccessAuth(apr_time_t time, std::string usertoken, std::string pwdtoken) const;
+  void load(std::string usertoken);
 
-  private:
-    void load(std::string usertoken);
+private:
+  void loadAuthsFromDB(SQLite::Database& db, std::string usertoken);
+  std::map<const std::string, std::vector<boost::share_ptr<PassAuth>>> auths_indexd_by_user_token;
 };
 
 } /* namespace detail */

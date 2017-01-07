@@ -118,30 +118,28 @@ int passauth_post_read_request(request_rec *r)
   std::string pwdtoken;
   std::tie(usertoken, pwdtoken) = module_config->auth->get_token_from_req(r);
   if (!usertoken.empty() && !pwdtoken.empty()) {
-      try {
-        if (!module_config->auth->loadAuth(usertoken)) {
-          LOG(APLOG_INFO, r->server, "loadAuth from db failed.");
-        }
-      }catch (const std::exception &e) {
-        LOG(APLOG_ERR, r->server, "load Auth from db failed, throw exception(%s)", e.what());
+    try {
+      if (!module_config->auth->load_auths(usertoken)) {
+        LOG(APLOG_INFO, r->server, "passauth failed to load UserPasswd.db");
       }
+    }
+    catch (const std::exception& e) {
+      LOG(APLOG_ERR, r->server, "passauth load UserPasswd.db failed, throw exception(%s)", e.what());
+      ap_die(HTTP_FORBIDDEN, r);
+    }
 
-      try {
-        if (!module_config->auth->checkPermission(apr_time_now(), pwdtoken) {
-          LOG(APLOG_INFO, r->server, "acl_localdb failed to pass ACL permisson check, HTTP_FORBIDDEN");
-          fep_put_error(r, HTTP_FORBIDDEN, NULL, "网关内部权限系统拒绝本次访问请求", NULL);
-          if (!server_config->check_every_request) {
-            connection_config->last_result = false;
-            LOG(APLOG_INFO, r->server, "acl_localdb is configed not to check every request, cache last result(NOT passed ACL)");
-          }
-          return HTTP_FORBIDDEN;
-        }
-      } catch (const std::exception& e) {
-        /* connection_config->last_result remains boost::logic::indeterminate */
-        LOG(APLOG_ERR, r->server, "acl_localdb ACL permisson check failed, throw exception(%s), HTTP_FORBIDDEN", e.what());
-        fep_put_error(r, HTTP_FORBIDDEN, NULL, "网关内部权限系统出现异常", "网关内部权限系统出现异常（如果频繁出现本信息，请与管理员联系）");
+    try {
+      if (!module_config->auth->checkPermission(apr_time_now(), usertoken, pwdtoken) {
+        LOG(APLOG_INFO, r->server, "passauth failed to pass AUTH permisson check, HTTP_FORBIDDEN");
+        fep_put_error(r, HTTP_FORBIDDEN, NULL, "网关内部权限系统拒绝本次访问请求", NULL);
         return HTTP_FORBIDDEN;
       }
+    } catch (const std::exception& e) {
+      /* connection_config->last_result remains boost::logic::indeterminate */
+      LOG(APLOG_ERR, r->server, "passauth AUTH permisson check failed, throw exception(%s), HTTP_FORBIDDEN", e.what());
+      fep_put_error(r, HTTP_FORBIDDEN, NULL, "网关内部权限系统出现异常", "网关内部权限系统出现异常（如果频繁出现本信息，请与管理员联系）");
+      return HTTP_FORBIDDEN;
+    }
   }
   else {
     module_config->auth->jump_auth_url(r);

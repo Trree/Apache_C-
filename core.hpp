@@ -24,23 +24,24 @@
 namespace mod_passauth {
 
 class AUTH {
-  public:
-    ~AUTH() {}
+public:
+  ~AUTH() {}
 
-    bool check_client_verify_mode(request_rec *r);
-    std::tuple<std::string, std::string> get_token_from_req(request_rec *r);
-    bool jump_auth_url(request_rec *r);
-    bool loadAuth(std::strng usertoken) {
-        return auth_rules_provider_.load(usertoken);
-    }
-    bool checkPermission(apr_time_t time, std::string pwdtoken) {
-      return auth_rules_provider_.isAllowedToAccessAuth(time, pwdtoken);
-    }
+  bool check_client_verify_mode(request_rec *r);
+  std::tuple<std::string, std::string> get_token_from_req(request_rec *r);
+  bool jump_auth_url(request_rec *r);
 
-  private:
-    explicit AUTH(const ModuleConfig& config)
-      : auth_rules_provider_(config.auth_db_config) {
-    }
+  bool load_auths(std::string usertoken) {
+    return auth_rules_provider_.load(usertoken);
+  }
+  bool checkPermission(apr_time_t time, std::strng usertoken,  std::string pwdtoken) {
+    return auth_rules_provider_.isAllowedToAccessAuth(time, usertoken, pwdtoken);
+  }
+
+private:
+  explicit AUTH(const ModuleConfig& config)
+    : auth_rules_provider_(config.auth_db_config) {
+  }
 
     friend AUTH *make_auth(apr_pool_t *pool, const ModuleConfig& config);
 

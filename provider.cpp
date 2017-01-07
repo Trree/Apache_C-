@@ -105,7 +105,7 @@ void AUTHRulesProvider::load(std::string usertoken) {
   SQLite::Database db(config.db_path, SQLite::OPEN_READONLY, config.sqlite_busy_timeout_ms);
   db.setBusyTimeout(config.sqlite_busy_timeout_ms);
   db.exec(config.sqlite_journal_mode);
-  loadAppsFromDB(db, usertoken);
+  return loadAppsFromDB(db, usertoken);
 }
 
 void AUTHRulesProvider::loadAuthsFromDB(SQLite::Database& db, std::string usertoken) {
@@ -126,10 +126,12 @@ void AUTHRulesProvider::loadAuthsFromDB(SQLite::Database& db, std::string userto
     passauth->allowtimebegin = allowtimebegin;
     passauth->allowtimeend = allowtimeend;
     passauth->pwdsessionid = pwdsessionid;
+
+    auths_indexd_by_user_token.insert(usertoken, passauth);
   }
 }
 
-bool AUTHRulesProvider::isAllowedToAccessAuth(apr_time_t time, std::string pwdtoken) const {
+bool AUTHRulesProvider::isAllowedToAccessAuth(apr_time_t time, std::string usertoken, std::string pwdtoken) const {
   apr_pool_t *p = NULL;
   apr_status_t rv = apr_pool_create(&p, NULL);
   if (rv != APR_SUCCESS) {
@@ -143,7 +145,7 @@ bool AUTHRulesProvider::isAllowedToAccessAuth(apr_time_t time, std::string pwdto
   apr_uri_parse(p, url, &parsed_proxy_uri);
 
 
-  boost::shared_ptr<App> app;
+  boost::shared_ptr<PassAuth> passauth;
   apps_indexd_by_fixed_ip::const_iterator apps_itr
     = apps_[protocol].get<0>().find(parsed_proxy_uri.hostname);
   if (apps_itr != apps_[protocol].get<0>().end()) {
