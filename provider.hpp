@@ -47,8 +47,9 @@ public:
   ~PassAuth() {}
 
   bool isStateAllowed(int state) const;
-  bool isSessionIdAllowed(string pwdtoken, std::string sessionid) const;
+  bool isSessionAllowd(std::string sessionid, std::string pwdtoken) const;
   bool isTimeAllowed(std::string allowtimebegin, std::string allowtimeend, apr_time_t time) const;
+  bool PassAuth::binduserinfo(std::string useremail, std::string usercn) const;
 
 private:
   int state;
